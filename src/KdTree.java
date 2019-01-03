@@ -152,6 +152,8 @@ public class KdTree {
 
         Node nearest = node;
 
+        Point2D curPoint = nearest.point;
+        if (curPoint.equals(p)) return nearest;
 
         Node rightNearest = nearest(node.right, p);
         if (rightNearest != null) {
@@ -166,11 +168,6 @@ public class KdTree {
         }
 
         return nearest;
-    }
-
-    private int compare(Point2D a, Point2D b, int level) {
-        Comparator<Point2D> comparator = level % 2 == 0 ? Point2D.X_ORDER : Point2D.Y_ORDER;
-        return comparator.compare(a, b);
     }
 
     private static class Node {
