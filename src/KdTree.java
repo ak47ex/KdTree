@@ -38,6 +38,7 @@ public class KdTree {
         while (true) {
             Comparator<Point2D> comparator = iter.level % 2 == 0 ? Point2D.X_ORDER : Point2D.Y_ORDER;
             int cmp = comparator.compare(p, iter.point);
+            if (cmp == 0 && p.equals(iter.point)) return;
             if (cmp < 0) {
                 if (iter.left != null) {
                     iter = iter.left;
@@ -68,11 +69,11 @@ public class KdTree {
 
         Node iter = root;
 
-        int level = 0;
         while (iter != null) {
-            int cmp = compare(p, iter.point, level++);
+            Comparator<Point2D> comparator = iter.level % 2 == 0 ? Point2D.X_ORDER : Point2D.Y_ORDER;
+            int cmp = comparator.compare(p, iter.point);
 
-            if (cmp == 0) {
+            if (cmp == 0 && p.equals(iter.point)) {
                 return true;
             }
 
