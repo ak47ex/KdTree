@@ -1,6 +1,5 @@
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
-import edu.princeton.cs.algs4.StdDraw;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -8,7 +7,7 @@ import java.util.TreeSet;
 
 public class PointSET {
 
-    private TreeSet<Point2D> set;
+    private final TreeSet<Point2D> set;
 
     // construct an empty set of points
     public PointSET() {
@@ -50,13 +49,9 @@ public class PointSET {
     public Iterable<Point2D> range(RectHV rect) {
         if (rect == null) throw new IllegalArgumentException();
 
-        Iterable<Point2D> subset = set.subSet(new Point2D(rect.xmin(), rect.ymin()), true, new Point2D(rect.xmax(), rect.ymax()), true);
-
-        Point2D bot = new Point2D(rect.xmin(), rect.ymin());
-        Point2D top = new Point2D(rect.xmax(), rect.ymax());
         List<Point2D> list = new LinkedList<>();
-        for (Point2D p : subset) {
-            if (Point2D.X_ORDER.compare(p, bot) > -1 && Point2D.X_ORDER.compare(p, top) < 1) list.add(p);
+        for (Point2D p : set) {
+            if (rect.contains(p)) list.add(p);
         }
 
         return list;
@@ -65,18 +60,13 @@ public class PointSET {
     // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
         if (p == null) throw new IllegalArgumentException();
+        if (size() == 0) return null;
 
-        Point2D floor = set.floor(p);
-        Point2D ceil = set.ceiling(p);
-        if (floor == null) return ceil;
-        if (ceil == null) return floor;
-
-        return p.distanceTo(floor) < p.distanceTo(ceil) ? floor : ceil;
-    }
-
-    // unit testing of the methods (optional)
-    public static void main(String[] args) {
-
+        Point2D nearest = set.first();
+        for (Point2D point : set) {
+            if (nearest.distanceSquaredTo(p) > point.distanceSquaredTo(p)) nearest = point;
+        }
+        return nearest;
     }
 
 }

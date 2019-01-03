@@ -1,9 +1,9 @@
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
-import edu.princeton.cs.algs4.StdDraw;
-import edu.princeton.cs.algs4.StdOut;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 
 public class KdTree {
 
@@ -34,32 +34,31 @@ public class KdTree {
             size++;
             return;
         }
-        int level = 0;
         Node iter = root;
         while (true) {
-            Comparator<Point2D> comparator = level % 2 == 0 ? Point2D.X_ORDER : Point2D.Y_ORDER;
+            Comparator<Point2D> comparator = iter.level % 2 == 0 ? Point2D.X_ORDER : Point2D.Y_ORDER;
             int cmp = comparator.compare(p, iter.point);
-            level++;
             if (cmp < 0) {
                 if (iter.left != null) {
                     iter = iter.left;
                     continue;
                 } else {
                     iter.left = new Node(p);
+                    iter.left.level = iter.level + 1;
                     size++;
                     break;
                 }
-            } else if (cmp > 0){
+            } else {
                 if (iter.right != null) {
                     iter = iter.right;
                     continue;
                 } else {
                     iter.right = new Node(p);
+                    iter.right.level = iter.level + 1;
                     size++;
                     break;
                 }
             }
-            break;
         }
     }
 
@@ -96,7 +95,7 @@ public class KdTree {
         if (node == null) return;
 
         draw(node.left);
-        StdDraw.point(node.point.x(), node.point.y());
+        node.point.draw();
         draw(node.right);
     }
 
@@ -105,8 +104,35 @@ public class KdTree {
         if (rect == null) throw new IllegalArgumentException();
 
         LinkedList<Point2D> list = new LinkedList<>();
+        range(root, rect, list);
+        return list;
+    }
 
-        return Collections.emptyList();
+    private void range(Node node, RectHV rect, List<Point2D> accumulator) {
+        if (node == null) return;
+
+        Point2D point = node.point;
+        if (rect.contains(point)) accumulator.add(point);
+
+        if (node.level % 2 == 0) {
+            if (point.x() <= rect.xmax() && point.x() >= rect.xmin()) {
+                range(node.left, rect, accumulator);
+                range(node.right, rect, accumulator);
+            } else if (point.x() > rect.xmax()) {
+                range(node.left, rect, accumulator);
+            } else if (point.x() < rect.xmin()) {
+                range(node.right, rect, accumulator);
+            }
+        } else {
+            if (point.y() <= rect.ymax() && point.y() >= rect.ymin()) {
+                range(node.left, rect, accumulator);
+                range(node.right, rect, accumulator);
+            } else if (point.y() > rect.ymax()) {
+                range(node.left, rect, accumulator);
+            } else if (point.y() < rect.ymin()) {
+                range(node.right, rect, accumulator);
+            }
+        }
     }
 
     // a nearest neighbor in the set to point p; null if the set is empty
@@ -115,35 +141,30 @@ public class KdTree {
 
         if (isEmpty()) return null;
 
-        Node iter = root;
 
-        int level = 0;
-        while (iter != null) {
-            Comparator<Point2D> comparator = level % 2 == 0 ? Point2D.X_ORDER : Point2D.Y_ORDER;
-            int cmp = comparator.compare(p, iter.point);
-            level++;
+        Node nearest = nearest(root, p);
+        return nearest != null ? nearest.point : null;
+    }
 
-            if (cmp == 0) return iter.point;
+    private Node nearest(Node node, Point2D p) {
+        if (node == null) return null;
 
-            if (cmp < 0) {
-                if (iter.left == null) return iter.point;
-                double dst1 = p.distanceTo(iter.point);
-                double dst2 = p.distanceTo(iter.left.point);
+        Node nearest = node;
 
-                if (dst1 < dst2) return iter.point;
-                iter = iter.left;
-            } else {
-                if (iter.right == null) return iter.point;
 
-                double dst1 = p.distanceTo(iter.point);
-                double dst2 = p.distanceTo(iter.right.point);
-
-                if (dst1 < dst2) return iter.point;
-                iter = iter.right;
-            }
+        Node rightNearest = nearest(node.right, p);
+        if (rightNearest != null) {
+            double rightDist = rightNearest.point.distanceSquaredTo(p);
+            if (rightDist < nearest.point.distanceSquaredTo(p)) nearest = rightNearest;
         }
 
-        return null;
+        Node leftNearest = nearest(node.left, p);
+        if (leftNearest != null) {
+            double leftDist = leftNearest.point.distanceSquaredTo(p);
+            if (leftDist < nearest.point.distanceSquaredTo(p)) nearest = leftNearest;
+        }
+
+        return nearest;
     }
 
     private int compare(Point2D a, Point2D b, int level) {
@@ -151,20 +172,9 @@ public class KdTree {
         return comparator.compare(a, b);
     }
 
-    // unit testing of the methods (optional)
-    public static void main(String[] args) {
-        KdTree kdtree = new KdTree();
-        kdtree.insert(new Point2D(0.5, 0.4));
-        kdtree.insert(new Point2D(0.3, 0.3));
-        kdtree.insert(new Point2D(0.2, 0.2));
-        kdtree.insert(new Point2D(0.1, 0.1));
-
-        System.out.println(kdtree.nearest(new Point2D(0.35, 0.4)));
-    }
-
     private static class Node {
         Point2D point;
-        RectHV rect;
+        int level;
         Node left;
         Node right;
 
